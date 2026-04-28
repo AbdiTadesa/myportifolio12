@@ -1,5 +1,6 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import SkillWorks from '@/components/SkillWorks';
 import { 
   Code, 
   Palette, 
@@ -113,8 +114,10 @@ export default function Skills() {
                     {skill.description}
                   </p>
 
+                  <SkillWorks category={skill.title} />
+
                   {/* Corner accent */}
-                  <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl ${skill.color} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-bl-full`} />
+                  <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl ${skill.color} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-bl-full pointer-events-none`} />
                 </div>
               </motion.div>
             ))}
