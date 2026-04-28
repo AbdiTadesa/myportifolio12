@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogIn, LogOut } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const navLinks = [
   { href: '#home', label: 'Home' },
@@ -19,14 +18,19 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (user && isAdmin) navigate('/admin');
+    else navigate('/auth');
+  };
 
   return (
     <motion.header
@@ -39,9 +43,12 @@ export default function Navigation() {
     >
       <nav className="container mx-auto px-6 flex items-center justify-between">
         <motion.a
-          href="#home"
-          className="text-xl font-display font-bold text-gradient"
-          whileHover={{ scale: 1.05 }}
+          href="/admin"
+          onClick={handleLogoClick}
+          className="text-xl font-display font-bold text-gradient cursor-pointer select-none"
+          whileHover={{ scale: 1.1 }}
+          title="Owner access"
+          aria-label="Owner access"
         >
           AT
         </motion.a>
@@ -65,21 +72,6 @@ export default function Navigation() {
             </motion.li>
           ))}
         </ul>
-
-        <div className="hidden md:flex items-center gap-3">
-          {isAdmin && <span className="text-xs text-primary">Admin</span>}
-          {user ? (
-            <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>
-              <LogOut className="w-4 h-4 mr-1" /> Sign out
-            </Button>
-          ) : (
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">
-                <LogIn className="w-4 h-4 mr-1" /> Admin
-              </Button>
-            </Link>
-          )}
-        </div>
 
         {/* Mobile Menu Button */}
         <Button
