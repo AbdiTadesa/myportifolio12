@@ -41,6 +41,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           external_url: string | null
+          file_type: string
           id: string
           image_url: string
           skill_category: string
@@ -51,6 +52,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           external_url?: string | null
+          file_type?: string
           id?: string
           image_url: string
           skill_category: string
@@ -61,6 +63,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           external_url?: string | null
+          file_type?: string
           id?: string
           image_url?: string
           skill_category?: string
