@@ -1,69 +1,68 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { z } from 'zod';
+import { ArrowLeft } from 'lucide-react';
 
-const schema = z.object({
-  email: z.string().trim().email({ message: 'Invalid email' }).max(255),
-  password: z.string().min(6, { message: 'Min 6 characters' }).max(100),
-});
+const OWNER_EMAIL = 'abditadese112@gmail.com';
 
 export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate('/');
+      if (session) navigate('/admin');
     });
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
-    if (!parsed.success) {
-      toast({ title: 'Invalid input', description: parsed.error.issues[0].message, variant: 'destructive' });
-      return;
-    }
     setLoading(true);
     try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+      // Try sign in first
+      let { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      // If owner has no account yet, create it once (signups are disabled globally,
+      // but if this is the owner email and login fails with "Invalid credentials",
+      // we attempt signUp — which will be rejected if signups are off).
+      if (error && email === OWNER_EMAIL) {
+        const signUpResult = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: { emailRedirectTo: `${window.location.origin}/admin` },
         });
-        if (error) throw error;
-        toast({ title: 'Account created', description: 'You can now sign in.' });
-        setMode('login');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate('/');
+        if (signUpResult.error) throw signUpResult.error;
+        // Try sign-in again after signup (auto-confirm is on)
+        const retry = await supabase.auth.signInWithPassword({ email, password });
+        if (retry.error) throw retry.error;
+        error = null;
       }
+
+      if (error) throw error;
+      navigate('/admin');
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast({ title: 'Sign-in failed', description: err.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
+    <main className="min-h-screen flex items-center justify-center p-6 relative">
+      <Link to="/" className="absolute top-6 left-6 text-muted-foreground hover:text-primary flex items-center gap-2 text-sm">
+        <ArrowLeft className="w-4 h-4" /> Back to portfolio
+      </Link>
       <div className="glass w-full max-w-md p-8 rounded-2xl">
-        <h1 className="text-3xl font-display font-bold mb-2 text-gradient">
-          {mode === 'login' ? 'Admin Sign In' : 'Create Admin Account'}
-        </h1>
+        <h1 className="text-3xl font-display font-bold mb-2 text-gradient">Owner Sign In</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          {mode === 'login' ? 'Sign in to manage your work samples.' : 'First, create an account. Admin access is granted separately.'}
+          This portal is private. Only the portfolio owner can sign in.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -75,16 +74,9 @@ export default function Auth() {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Sign Up'}
+            {loading ? 'Please wait...' : 'Sign In'}
           </Button>
         </form>
-        <button
-          type="button"
-          onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-          className="mt-4 text-sm text-primary hover:underline w-full text-center"
-        >
-          {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-        </button>
       </div>
     </main>
   );
