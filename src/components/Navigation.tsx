@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const navLinks = [
   { href: '#home', label: 'Home' },
@@ -15,6 +18,7 @@ const navLinks = [
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,6 +65,21 @@ export default function Navigation() {
             </motion.li>
           ))}
         </ul>
+
+        <div className="hidden md:flex items-center gap-3">
+          {isAdmin && <span className="text-xs text-primary">Admin</span>}
+          {user ? (
+            <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>
+              <LogOut className="w-4 h-4 mr-1" /> Sign out
+            </Button>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="sm">
+                <LogIn className="w-4 h-4 mr-1" /> Admin
+              </Button>
+            </Link>
+          )}
+        </div>
 
         {/* Mobile Menu Button */}
         <Button
